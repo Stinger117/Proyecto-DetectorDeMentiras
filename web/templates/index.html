@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Mentiras IoT</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            /* Fondo con gradiente azul pastel */
+            background: linear-gradient(135deg, #4ea7ff, #622b96);
+            color: white;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background-color: rgba(35, 35, 35, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 900px;
+            height: 90%;
+            max-height: 450px;
+        }
+        h1 { font-size: 3em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
+        #decision { font-size: 4em; font-weight: bold; margin: 20px 0; }
+        #status, #details { font-size: 1.2em; color: #ccc; }
+
+        /* Estilos para el botón */
+        .gradient-button {
+            background: linear-gradient(135deg, #5b89ff, #3f2b96);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-bottom: 20px; /* Espacio entre el botón y el texto de abajo */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .gradient-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        /* --- Fin de nuevos estilos --- */
+
+        .truth { color: #2ecc71; }
+        .lie { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Detector de Mentiras</h1>
+        <p id="status">Conectando al servidor...</p>
+        <h2 id="decision">---</h2>
+        
+        <button id="testButton" class="gradient-button">Comenzar Prueba</button>
+
+        <p id="details">Esperando datos...</p>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        // Elementos del DOM que vamos a manipular
+        const statusEl = document.getElementById('status');
+        const decisionEl = document.getElementById('decision');
+        const detailsEl = document.getElementById('details');
+        const bodyEl = document.body;
+        // ¡NUEVO! Referencia al botón
+        const testButton = document.getElementById('testButton');
+
+        socket.on('connect', () => {
+            statusEl.textContent = 'Conectado. Haz clic en "Comenzar Prueba" para iniciar.';
+        });
+
+        socket.on('update_status', (msg) => {
+            statusEl.textContent = msg.data;
+        });
+
+        socket.on('new_decision', (data) => {
+            decisionEl.textContent = data.decision;
+            detailsEl.innerHTML = `Ritmo Cardíaco: <b>${data.hr}bpm</b> | Temp: <b>${data.temp}°C</b><br>Razones: ${data.reasons.join(', ') || 'Ninguna'}`;
+
+            if (data.decision === 'MINTIENDO') {
+                decisionEl.className = 'lie';
+                bodyEl.style.backgroundColor = '#e74c3c';
+            } else {
+                decisionEl.className = 'truth';
+                bodyEl.style.backgroundColor = '#2ecc71';
+            }
+            
+            // ¡NUEVO! Cambiamos el texto del botón al recibir una decisión
+            testButton.textContent = 'Reiniciar Prueba';
+        });
+
+        // ¡NUEVO! Hacemos que el botón sea funcional
+        testButton.addEventListener('click', () => {
+            // Reiniciamos la interfaz visualmente
+            statusEl.textContent = 'Iniciando nueva prueba...';
+            decisionEl.textContent = '---';
+            decisionEl.className = '';
+            detailsEl.textContent = 'Esperando datos de calibración...';
+            bodyEl.style.backgroundColor = '#3f2b96'; // Vuelve al color base
+            testButton.textContent = 'Prueba en Curso...';
+
+            // Le avisamos al servidor que queremos empezar (o reiniciar)
+            socket.emit('start_test'); 
+        });
+
+    </script>
+</body>
+</html>
