@@ -1,30 +1,35 @@
-#ifndef SENSOR_MANAGER_H
-
-#define SENSOR_MANAGER_H
-
 /*
+  SensorManager.h
+  ----------------
+  Esta clase se encarga de gestionar las lecturas analógicas del potenciómetro.
+  - Toma lecturas continuas del pin configurado.
+  - Agrupa un número definido de muestras (lote).
+  - Prepara los datos en formato JSON para ser enviados al broker MQTT.
 
-Esta clase sera utilizada para manejar todas las operaciones de los sensores
-
-Se encarga de la configuración y lectura de todos los sensores físicos
-
-conectados al ESP32, temperatura (DS18B20) y el de ritmo cardíaco (AD8232)
-
+  En este proyecto, el potenciómetro se usa como una fuente de señal analógica
+  para simular lecturas de un sensor (por ejemplo, pulso o respuesta galvánica),
+  lo que permitirá más adelante enviar señales reales para el detector de mentiras.
 */
+
+#ifndef SENSOR_MANAGER_H
+#define SENSOR_MANAGER_H
 
 #include <Arduino.h>
 
-class SensorManager
-{
+class SensorManager {
+private:
+    int _pin;
+    int _batchSize;
+    int _delayMs;
+    int _index;
+    float* _samples;
 
 public:
-    SensorManager(); // Constructor
+    SensorManager(int pin, int batchSize, int delayMs);
+    ~SensorManager();
 
-    void setup();
-
-    float getTemperature();
-
-    int getHeartRate();
+    bool available();               // Indica si un lote de datos está listo
+    String getDataBatchJSON();      // Devuelve el lote en formato JSON
 };
 
 #endif

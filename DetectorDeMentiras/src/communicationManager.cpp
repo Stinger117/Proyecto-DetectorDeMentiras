@@ -1,125 +1,67 @@
-#include <WiFi.h>
-
-#include <PubSubClient.h>
+/*
+  CommunicationManager.cpp
+  ------------------------
+  Esta clase se encarga de manejar la comunicación del ESP32 con la red WiFi y el broker MQTT.
+  - Conecta el dispositivo a una red WiFi usando las credenciales proporcionadas.
+  - Establece y mantiene la conexión con el servidor MQTT.
+  - Publica los datos adquiridos por el sensor (por ejemplo, del potenciómetro) en el tema configurado.
+  - Se utiliza para enviar los lotes de muestras al servidor en tiempo real, a una frecuencia aproximada de 200 Hz.
+  En el futuro, servirá como base para integrar más sensores o manejar distintos canales de comunicación.
+*/
 
 #include "CommunicationManager.h"
 
-#include "clavesConfig.h" // Importamos nuestras claves
+CommunicationManager::CommunicationManager(const char* server, int port, const char* user, const char* pass, const char* id)
+  : mqtt_server(server), mqtt_port(port), mqtt_user(user), mqtt_pass(pass), client_id(id), client(espClient) {
+    client.setBufferSize(MQTT_MAX_PACKET_SIZE);
+}
 
-// Declaraciones de WiFi y MQTT
+void CommunicationManager::connectWiFi(const char* ssid, const char* password) {
+    Serial.print("Conectando a WiFi");
+    WiFi.begin(ssid, password);
 
-WiFiClient espClient;
-
-PubSubClient client(espClient);
-
-// Reconexion
-
-void reconnect();
-
-CommunicationManager::CommunicationManager() {}
-
-void CommunicationManager::setup()
-{
-
-    Serial.println();
-
-    Serial.print("Conectando a la red WiFi: ");
-
-    Serial.println(WIFI_SSID);
-
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-    // Esperamos a que la conexión WiFi se establezca
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-
+    while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-
         Serial.print(".");
     }
 
-    Serial.println("\nWiFi conectado");
-
+    Serial.println("\nWiFi conectado!");
     Serial.print("Dirección IP: ");
-
     Serial.println(WiFi.localIP());
-
-    // Configuramos el servidor MQTT
-
-    client.setServer(MQTT_SERVER, MQTT_PORT);
 }
 
-void CommunicationManager::loop()
-{
+void CommunicationManager::connectMQTT() {
+    client.setServer(mqtt_server, mqtt_port);
+    Serial.print("Intentando conexión MQTT...");
 
-    // Si no estamos conectados, intentamos reconectar
-
-    if (!client.connected())
-    {
-
-        reconnect();
-    }
-
-    client.loop();
-}
-
-void CommunicationManager::publishData(const char *payload)
-{
-
-    if (client.connected())
-    {
-
-        client.publish(MQTT_TOPIC, payload);
-
-        Serial.print("Mensaje publicado en el topic '");
-
-        Serial.print(MQTT_TOPIC);
-
-        Serial.print("': ");
-
-        Serial.println(payload);
-    }
-    else
-    {
-
-        Serial.println("No se pudo publicar. Cliente MQTT no conectado.");
-    }
-}
-
-// Funcion para Reconexion
-
-void reconnect()
-{
-
-    while (!client.connected())
-    {
-
-        Serial.print("Intentando conexión MQTT...");
-
-        String clientId = "ESP32Client-";
-
-        clientId += String(random(0xffff), HEX);
-
-        if (client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS))
-        {
-
-            Serial.println("¡Conectado al broker MQTT!");
-
-            // Aquí podrías suscribirte a topics si fuera necesario
-
-            // client.subscribe("otro_topic");
-        }
-        else
-        {
-
-            Serial.print("falló, rc=");
-
+    while (!client.connected()) {
+        if (client.connect(client_id, mqtt_user, mqtt_pass)) {
+            Serial.println("Conectado!");
+        } else {
+            Serial.print("Fallo, rc=");
             Serial.print(client.state());
-
-            Serial.println(" -> Intentando de nuevo en 5 segundos");
-
-            delay(5000);
+            Serial.println(" reintentando en 3 segundos...");
+            delay(3000);
         }
     }
+}
+
+void CommunicationManager::publish(const char* topic, const char* payload) {
+    if (!client.connected()) {
+        connectMQTT();
+    }
+
+    bool ok = client.publish(topic, payload);
+    if (ok) {
+        Serial.println("Lote enviado al MQTT correctamente");
+    } else {
+        Serial.println("Error al publicar lote. Tamaño de mensaje o broker");
+    }
+}
+
+void CommunicationManager::loop() {
+    if (!client.connected()) {
+        connectMQTT();
+    }
+    client.loop();
 }

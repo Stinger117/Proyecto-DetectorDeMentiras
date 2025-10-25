@@ -12,7 +12,6 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            /* Fondo con gradiente azul pastel */
             background: linear-gradient(135deg, #4ea7ff, #622b96);
             color: white;
             transition: background-color 0.5s ease;
@@ -43,7 +42,7 @@
             border-radius: 50px;
             cursor: pointer;
             margin-top: 20px;
-            margin-bottom: 20px; /* Espacio entre el botón y el texto de abajo */
+            margin-bottom: 20px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
@@ -51,7 +50,6 @@
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
-        /* --- Fin de nuevos estilos --- */
 
         .truth { color: #2ecc71; }
         .lie { color: #e74c3c; }
@@ -101,11 +99,11 @@
                 bodyEl.style.backgroundColor = '#2ecc71';
             }
             
-            // ¡NUEVO! Cambiamos el texto del botón al recibir una decisión
+            // Cambiamos el texto del botón al recibir una decisión
             testButton.textContent = 'Reiniciar Prueba';
         });
 
-        // ¡NUEVO! Hacemos que el botón sea funcional
+        // Hacemos que el botón sea funcional
         testButton.addEventListener('click', () => {
             // Reiniciamos la interfaz visualmente
             statusEl.textContent = 'Iniciando nueva prueba...';
