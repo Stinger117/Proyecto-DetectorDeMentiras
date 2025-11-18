@@ -1,14 +1,11 @@
 /*
-  SensorManager.h
-  ----------------
-  Esta clase se encarga de gestionar las lecturas analógicas del potenciómetro.
-  - Toma lecturas continuas del pin configurado.
-  - Agrupa un número definido de muestras (lote).
-  - Prepara los datos en formato JSON para ser enviados al broker MQTT.
-
-  En este proyecto, el potenciómetro se usa como una fuente de señal analógica
-  para simular lecturas de un sensor (por ejemplo, pulso o respuesta galvánica),
-  lo que permitirá más adelante enviar señales reales para el detector de mentiras.
+ SensorManager.h
+ ----------------
+ Esta clase se encarga de gestionar las lecturas del módulo ECG AD8232.
+ - Toma lecturas continuas de la señal analógica (OUTPUT).
+ - Monitorea los pines LO+ y LO- para detectar si los electrodos están desconectados.
+ - Agrupa un número definido de muestras (lote) a alta frecuencia.
+ - Prepara los datos en formato JSON para ser enviados al broker MQTT.
 */
 
 #ifndef SENSOR_MANAGER_H
@@ -18,18 +15,26 @@
 
 class SensorManager {
 private:
-    int _pin;
+    // Pines
+    int _analogPin;  // Pin para la señal de ECG (OUTPUT)
+    int _loPlusPin;  // Pin para "Leads Off" +
+    int _loMinusPin; // Pin para "Leads Off" -
+
+    // Configuración de lote
     int _batchSize;
     int _delayMs;
     int _index;
     float* _samples;
 
 public:
-    SensorManager(int pin, int batchSize, int delayMs);
+    // Constructor actualizado para recibir los 3 pines
+    SensorManager(int analogPin, int loPlusPin, int loMinusPin, int batchSize, int delayMs);
     ~SensorManager();
 
-    bool available();               // Indica si un lote de datos está listo
-    String getDataBatchJSON();      // Devuelve el lote en formato JSON
+    bool available();             // Indica si un lote de datos está listo
+    
+    // DEVUELVE EL LOTE EN FORMATO JSON, INCLUYENDO LAS TEMPERATURAS
+    String getDataBatchJSON(float temp1, float temp2);    
 };
 
 #endif
