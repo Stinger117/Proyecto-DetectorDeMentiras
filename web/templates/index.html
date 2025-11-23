@@ -3,267 +3,1817 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detector de Mentiras IoT</title>
-    
+    <title>ICO-IOT - Signos Vitales</title>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        :root {
+            --bg-main: #020617;
+            --bg-card: #0b1120;
+            --accent: #f472b6;
+            --accent-2: #22d3ee;
+            --accent-3: #4ade80;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --sidebar-width: 240px;
+            --sidebar-width-collapsed: 80px;
+        }
+
+        * {
             margin: 0;
-            background: linear-gradient(135deg, #4ea7ff, #622b96);
-            color: white;
-            transition: background-color 0.5s ease;
-            padding: 20px;
+            padding: 0;
             box-sizing: border-box;
         }
-        .main-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* Dos columnas */
-            gap: 20px;
-            width: 95%;
-            max-width: 1400px;
-            background-color: rgba(35, 35, 35, 0.9);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            padding: 30px;
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background:
+                radial-gradient(circle at top left, #1d2445 0%, transparent 45%),
+                radial-gradient(circle at bottom right, #581c8733 0%, transparent 55%),
+                var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .left-panel, .right-panel {
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* SIDEBAR -------------------------------------------------------- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #020617;
+            border-right: 1px solid rgba(15, 23, 42, 0.9);
+            padding: 20px 16px 18px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 26px;
+            box-shadow: 12px 0 40px rgba(15, 23, 42, 0.95);
+            transition: width 0.25s ease;
+            flex-shrink: 0;
         }
-        .card {
-            background-color: rgba(50, 50, 50, 0.8);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
-        h2 { margin-top: 5px; }
-        #decision { font-size: 3.5em; font-weight: bold; margin: 10px 0; }
-        #status, #details { font-size: 1.1em; color: #ccc; }
 
-        /* Estilos para indicadores de temperatura */
-        .temp-indicators {
+        .sidebar-header {
             display: flex;
-            justify-content: space-around;
-            margin-top: 15px;
+            align-items: center;
+            gap: 10px;
+            padding: 0 6px;
         }
-        .temp-indicator {
-            font-size: 1.5em;
-            font-weight: bold;
+
+        .logo-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 30%, #f97316, #22d3ee);
+            box-shadow: 0 0 18px rgba(34, 211, 238, 0.9);
+        }
+
+        .logo-text {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 700;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: var(--text-muted);
+            opacity: 0.9;
+            margin-bottom: 8px;
+            padding: 0 6px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .nav-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .nav-item-icon i {
+            font-size: 1.3rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(37, 99, 235, 0.18);
+            color: #e5e7eb;
+            transform: translateX(3px);
+            filter: brightness(1.05);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, #4c1d95, #7c3aed);
+            color: #f9fafb;
+        }
+
+        .nav-item.active .nav-item-icon {
+            background: #020617;
+        }
+
+        .sidebar-projects {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .project-pill {
+            font-size: 0.8rem;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(31, 41, 55, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-muted);
+            background: #020617;
+        }
+
+        .project-pill span:last-child {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0 6px;
+            opacity: 0.9;
+        }
+
+        /* Sidebar colapsada (desktop) */
+        @media (min-width: 861px) {
+            body.sidebar-collapsed .sidebar {
+                width: var(--sidebar-width-collapsed);
+            }
+
+            body.sidebar-collapsed .logo-text,
+            body.sidebar-collapsed .sidebar-section-title,
+            body.sidebar-collapsed .nav-item-label,
+            body.sidebar-collapsed .project-pill span:last-child,
+            body.sidebar-collapsed .sidebar-footer {
+                display: none;
+            }
+
+            body.sidebar-collapsed .project-pill {
+                justify-content: center;
+            }
+
+            body.sidebar-collapsed .nav-item {
+                justify-content: center;
+            }
+        }
+
+        /* MAIN ----------------------------------------------------------- */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px 10px;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.9);
+            gap: 16px;
+            background: linear-gradient(90deg, #1e1b4b, #020617 45%, #020617 100%);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+        }
+
+        .sidebar-toggle {
+            border: none;
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-main);
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .sidebar-toggle i {
+            font-size: 1.4rem;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(30, 64, 175, 0.9);
+        }
+
+        .breadcrumb {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .breadcrumb-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .breadcrumb-sub {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ACTIVIDADES EN HEADER: dos tarjetas ---------------------------- */
+        .topbar-activities-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-activity-card {
+            background: #020617;
+            border-radius: 16px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            padding: 6px 10px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.95);
+            min-width: 220px;
+        }
+
+        .topbar-activity-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .topbar-activities-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .main-content {
+            padding: 18px 32px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-width: 0;
+        }
+
+        /* ESTADO + SELECTOR SENSORES ------------------------------------ */
+        .status-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .status-box {
+            flex: 1 1 260px;
+            background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.3), rgba(15, 23, 42, 0.95));
+            border-radius: 16px;
+            padding: 10px 18px;
+            border: 1px solid rgba(56, 189, 248, 0.8);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--accent-2);
+            box-shadow: 0 18px 40px rgba(8, 47, 73, 0.9);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .dropdown {
+            background: #020617;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            color: #e5e7eb;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .dropdown:hover {
+            border-color: rgba(96, 165, 250, 0.9);
+        }
+
+        /* MÉTRICAS ------------------------------------------------------ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            min-width: 0;
+        }
+
+        @media (min-width: 1200px) {
+            .metrics-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        .metric-card {
+            background: radial-gradient(circle at top left, rgba(129, 140, 248, 0.18), rgba(15, 23, 42, 0.96));
+            border-radius: 18px;
+            padding: 10px 14px 8px;
+            border: 1px solid rgba(30, 64, 175, 0.7);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.95);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card.heart {
+            border-top: 3px solid var(--accent);
+        }
+
+        .metric-card.temp {
+            border-top: 3px solid var(--accent-2);
+        }
+
+        .metric-card.status {
+            border-top: 3px solid #6366f1;
+        }
+
+        /* Nueva clase para las tarjetas HRV (SDNN, RMSSD, PNN50) */
+        .metric-card.hrv {
+            border-top: 3px solid var(--accent-3);
+            background: radial-gradient(circle at top left, rgba(74, 222, 128, 0.18), rgba(15, 23, 42, 0.96));
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+        }
+
+        .metric-label-with-icon {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .temp-icon {
+            font-size: 1rem;
+        }
+
+        .metric-icon i {
+            font-size: 1.5rem;
+            color: #e5e7eb;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.25); }
+            40% { transform: scale(1); }
+            60% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+        .metric-card.heart .metric-icon i {
+            animation: heartbeat 1s ease-in-out infinite;
+            transform-origin: center;
+            color: var(--accent);
+        }
+
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 2px 0 0;
+        }
+
+        .metric-card.heart .metric-value {
+            color: var(--accent);
+        }
+
+        .metric-card.temp .metric-value {
+            color: var(--accent-2);
+        }
+        
+        .metric-card.hrv .metric-value {
+            color: var(--accent-3);
+        }
+
+        .metric-unit {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .metric-subtext {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* GAUGE CIRCULAR (BPM y temperaturas) --------------------------- */
+        .metric-gauge-circle {
+            --gauge-value: 0deg;
+            width: 100px;
+            height: 100px;
+            margin: 4px auto 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                conic-gradient(from -90deg,
+                    #22d3ee 0deg,
+                    #22d3ee var(--gauge-value),
+                    rgba(15,23,42,0.7) var(--gauge-value),
+                    rgba(15,23,42,0.7) 360deg);
+            box-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
+            position: relative;
+        }
+
+        .metric-gauge-circle.temp-gauge {
+            background:
+                conic-gradient(from -90deg,
+                    #22d3ee 0deg,
+                    #f97316 var(--gauge-value),
+                    rgba(15,23,42,0.7) var(--gauge-value),
+                    rgba(15,23,42,0.7) 360deg);
+        }
+
+        .metric-gauge-inner {
+            width: 72%;
+            height: 72%;
+            border-radius: 50%;
+            background: #020617;
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-        .temp-indicator span {
-            font-size: 0.7em;
-            color: #aaa;
+            justify-content: center;
         }
 
-        /* BPM display */
-        #bpm-display {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #4CAF50; /* Verde */
+        .metric-gauge-small {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 0;
+        }
+
+        /* GRID PRINCIPAL (gráfica) -------------------------------------- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        .chart-container {
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.98));
+            border-radius: 22px;
+            padding: 14px 18px 16px;
+            border: 1px solid rgba(30, 64, 175, 0.7);
+            box-shadow: 0 22px 50px rgba(15, 23, 42, 0.95);
+            min-width: 0;
+        }
+
+        .chart-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+        }
+
+        .chart-legend-mini {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #fb7185; /* rojo cereza */
+            box-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+        }
+
+        canvas {
+            max-height: 288px;
+            width: 100% !important;
+        }
+
+        /* BOTONES SESIÓN ------------------------------------------------ */
+        @keyframes startGlow {
+            0%   { box-shadow: 0 0 0 rgba(34, 211, 238, 0.0); }
+            50%  { box-shadow: 0 0 18px rgba(34, 211, 238, 0.7); }
+            100% { box-shadow: 0 0 0 rgba(34, 211, 238, 0.0); }
+        }
+
+        @keyframes stopGlow {
+            0%   { box-shadow: 0 0 0 rgba(244, 114, 182, 0.0); }
+            50%  { box-shadow: 0 0 14px rgba(244, 114, 182, 0.45); }
+            100% { box-shadow: 0 0 0 rgba(244, 114, 182, 0.0); }
+        }
+
+        .btn-session {
+            border-radius: 999px;
+            border: 1px solid rgba(31, 41, 55, 0.9);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-main);
+            padding: 6px 14px;
+            transition: background 0.2s ease, transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .btn-session.start {
+            background: linear-gradient(90deg, #22d3ee, #f472b6);
+            border-color: transparent;
+            color: #020617;
+            animation: startGlow 2s ease-in-out infinite;
+        }
+
+        .btn-session.stop {
+            background: rgba(15, 23, 42, 0.95);
+            animation: stopGlow 3s ease-in-out infinite;
+        }
+
+        .btn-session:hover {
+            transform: translateX(3px) translateY(-1px) scale(1.02);
+            filter: brightness(1.05);
+        }
+
+        .btn-session:active {
+            transform: translateX(1px) translateY(0) scale(0.98);
+            filter: brightness(0.98);
+        }
+
+        .activity-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent-2);
+        }
+
+        .activity-label {
+            color: #e5e7eb;
+            font-size: 0.82rem;
+        }
+
+        .activity-time {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+        }
+
+        /* MODAL DATOS PACIENTE ------------------------------------------- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.88);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-card {
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.98));
+            border-radius: 20px;
+            padding: 20px 24px 18px;
+            border: 1px solid rgba(59, 130, 246, 0.75);
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.95);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #e5e7eb;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .modal-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .modal-input,
+        .modal-textarea {
+            border-radius: 10px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            background: rgba(15, 23, 42, 0.98);
+            color: var(--text-main);
+            padding: 7px 10px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .modal-textarea {
+            resize: vertical;
+            min-height: 60px;
+            max-height: 150px;
+        }
+
+        .modal-footer {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-save-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(90deg, #22d3ee, #f472b6);
+            color: #020617;
+        }
+
+        .modal-save-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        /* SECCIÓN PACIENTES / HISTORIAL --------------------------------- */
+        .patients-section {
             margin-top: 10px;
         }
 
-        .truth { color: #2ecc71; } /* Verde */
-        .lie { color: #e74c3c; } /* Rojo */
-
-        /* Estilos para la gráfica */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
+        .patients-card {
+            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.98));
+            border-radius: 20px;
+            padding: 14px 18px 16px;
+            border: 1px solid rgba(30, 64, 175, 0.7);
+            box-shadow: 0 22px 50px rgba(15, 23, 42, 0.95);
         }
-        canvas {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 10px;
+
+        .patients-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .patients-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+        }
+
+        .patients-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .patients-table-wrapper {
+            margin-top: 8px;
+            overflow-x: auto;
+        }
+
+        .patients-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .patients-table th,
+        .patients-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(31, 41, 55, 0.8);
+            white-space: nowrap;
+        }
+
+        .patients-table th {
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .patients-table tr:hover td {
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .patients-empty {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* BOTÓN IMPRIMIR ------------------------------------------------ */
+        .btn-print {
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.95);
+            color: #e5e7eb;
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s ease, transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .btn-print:hover {
+            background: linear-gradient(90deg, #22d3ee, #f472b6);
+            color: #020617;
+            transform: translateY(-1px) scale(1.02);
+            filter: brightness(1.05);
+        }
+
+        /* BOTÓN ELIMINAR ------------------------------------------------ */
+        .btn-delete {
+            border-radius: 999px;
+            border: 1px solid rgba(248, 113, 113, 0.5);
+            background: rgba(15, 23, 42, 0.95);
+            color: #fecaca;
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s ease, transform 0.15s ease, filter 0.15s ease;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(90deg, #f97373, #fb7185);
+            color: #020617;
+            transform: translateY(-1px) scale(1.02);
+            filter: brightness(1.05);
+        }
+
+        /* RESPONSIVE ---------------------------------------------------- */
+        @media (max-width: 1100px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topbar-right {
+                width: 100%;
+            }
+
+            .topbar-activities-grid {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .main-content {
+                padding: 16px 20px 22px;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                flex-direction: row;
+                width: 100%;
+                height: auto;
+                padding: 12px 14px;
+                overflow-x: auto;
+            }
+
+            .sidebar-section-title,
+            .sidebar-projects,
+            .sidebar-footer {
+                display: none;
+            }
+
+            .sidebar-nav {
+                flex-direction: row;
+                gap: 12px;
+            }
+
+            .nav-item {
+                justify-content: center;
+            }
+
+            .nav-item-label {
+                display: none;
+            }
+
+            .topbar {
+                padding: 14px 18px 8px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .status-row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-dot"></div>
+            <div class="logo-text">ICO-IOT</div>
+        </div>
 
-    <div class="main-container">
-        <div class="left-panel">
-            <div class="card">
-                <h1>Detector de Mentiras IoT</h1>
-                <p id="status">Conectando al servidor...</p>
-                <h2 id="decision">---</h2>
-                <p id="details">Esperando datos...</p>
-            </div>
-            
-            <div class="card">
-                <h2>Ritmo Cardíaco (BPM)</h2>
-                <p id="bpm-display">--</p>
-            </div>
+        <div>
+            <div class="sidebar-section-title">Menú</div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" id="navDashboard">
+                    <div class="nav-item-icon">
+                        <i class='bx bx-home-alt-2'></i>
+                    </div>
+                    <span class="nav-item-label">Dashboard</span>
+                </div>
+                <div class="nav-item" id="navPacientes">
+                    <div class="nav-item-icon">
+                        <i class='bx bx-collection'></i>
+                    </div>
+                    <span class="nav-item-label">Pacientes</span>
+                </div>
+                <div class="nav-item" id="navReportes">
+                    <div class="nav-item-icon">
+                        <i class='bx bx-folder-open'></i>
+                    </div>
+                    <span class="nav-item-label">Reportes</span>
+                </div>
+            </nav>
+        </div>
 
-            <div class="card">
-                <h2>Temperatura</h2>
-                <div class="temp-indicators">
-                    <div class="temp-indicator">
-                        <span id="temp1-display">--</span>
-                        <span>Sensor 1 (°C)</span>
-                    </div>
-                    <div class="temp-indicator">
-                        <span id="temp2-display">--</span>
-                        <span>Sensor 2 (°C)</span>
-                    </div>
+        <div>
+            <div class="sidebar-section-title">Proyectos</div>
+            <div class="sidebar-projects">
+                <div class="project-pill">
+                    <span>Opción</span><span>Activo</span>
+                </div>
+                <div class="project-pill">
+                    <span>Prueba</span><span>Hoy</span>
+                </div>
+                <div class="project-pill">
+                    <span>Historial</span><span>Log</span>
                 </div>
             </div>
         </div>
 
-        <div class="right-panel">
-            <div class="card">
-                <h2>Señal ECG Cruda</h2>
-                <div class="chart-container">
-                    <canvas id="ecgChart"></canvas>
+        <div class="sidebar-footer">
+            Monitor de signos vitales · v1.0
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class='bx bx-menu-alt-left'></i>
+                </button>
+
+                <div class="breadcrumb">
+                    <div class="breadcrumb-title">Dashboard</div>
+                    <div class="breadcrumb-sub">Signos vitales / Home</div>
                 </div>
             </div>
+
+            <div class="topbar-right">
+                <div class="topbar-activities-grid">
+                    <div class="topbar-activity-card">
+                        <div class="topbar-activity-title">Sesión iniciada</div>
+                        <div class="topbar-activities-row">
+                            <div class="activity-main">
+                                <span class="activity-dot"></span>
+                                <div>
+                                    <div class="activity-label">Último evento</div>
+                                    <div class="activity-time">10:32</div>
+                                </div>
+                            </div>
+                            <button class="btn-session start" id="btnStart">Iniciar</button>
+                        </div>
+                    </div>
+
+                    <div class="topbar-activity-card">
+                        <div class="topbar-activity-title">Sesión guardada</div>
+                        <div class="topbar-activities-row">
+                            <div class="activity-main">
+                                <span class="activity-dot"></span>
+                                <div>
+                                    <div class="activity-label">Último evento</div>
+                                    <div class="activity-time">10:45</div>
+                                </div>
+                            </div>
+                            <button class="btn-session stop">Finalizar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div id="dashboardSection">
+                <div class="status-row">
+                    <div class="status-box" id="status">Esperando conexión...</div>
+                    <div class="header-controls">
+                        <select class="dropdown" id="sensorFilter">
+                            <option value="all">Todos los sensores</option>
+                            <option value="ecg">ECG</option>
+                            <option value="temp">Temperatura</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card heart" id="card-bpm">
+                        <div class="metric-header">
+                            <div class="metric-label">BPM</div>
+                            <div class="metric-icon">
+                                <i class='bx bx-pulse'></i>
+                            </div>
+                        </div>
+                        <div class="metric-gauge-circle" id="bpmGauge">
+                            <div class="metric-gauge-inner">
+                                <div class="metric-value" id="bpm">--</div>
+                                <div class="metric-gauge-small">BPM</div>
+                            </div>
+                        </div>
+                        <div class="metric-unit">Ritmo cardíaco</div>
+                        <div class="metric-subtext">Latidos por minuto</div>
+                    </div>
+
+                    <div class="metric-card temp" id="card-temp1">
+                        <div class="metric-header">
+                            <div class="metric-label metric-label-with-icon">
+                                <span class="temp-icon">💧</span>
+                                TEMPERATURA 1
+                            </div>
+                            <div class="metric-icon">
+                                <i class='bx bx-thermometer'></i>
+                            </div>
+                        </div>
+
+                        <div class="metric-gauge-circle temp-gauge" id="temp1Gauge">
+                            <div class="metric-gauge-inner">
+                                <div class="metric-value" id="temp1">--</div>
+                                <div class="metric-gauge-small">°C</div>
+                            </div>
+                        </div>
+
+                        <div class="metric-unit">Sensor 1 (VP)</div>
+                        <div class="metric-subtext">Temperatura periférica</div>
+                    </div>
+
+                    <div class="metric-card temp" id="card-temp2">
+                        <div class="metric-header">
+                            <div class="metric-label metric-label-with-icon">
+                                <span class="temp-icon">💧</span>
+                                TEMPERATURA 2
+                            </div>
+                            <div class="metric-icon">
+                                <i class='bx bx-thermometer'></i>
+                            </div>
+                        </div>
+
+                        <div class="metric-gauge-circle temp-gauge" id="temp2Gauge">
+                            <div class="metric-gauge-inner">
+                                <div class="metric-value" id="temp2">--</div>
+                                <div class="metric-gauge-small">°C</div>
+                            </div>
+                        </div>
+
+                        <div class="metric-unit">Sensor 2 (VP)</div>
+                        <div class="metric-subtext">Temperatura periférica</div>
+                    </div>
+
+                    <div class="metric-card status" id="card-electrodes">
+                        <div class="metric-header">
+                            <div class="metric-label">Estado</div>
+                            <div class="metric-icon">
+                                <i class='bx bx-wifi'></i>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="connection-status" style="color: var(--accent); font-size:1.1rem; margin-top:10px;">
+                            Desconectado
+                        </div>
+                        <div class="metric-unit">Electrodos</div>
+                        <div class="metric-subtext">Estado de conexión</div>
+                    </div>
+
+                    <div class="metric-card hrv" id="card-sdnn">
+                        <div class="metric-header">
+                            <div class="metric-label">SDNN</div>
+                            <div class="metric-icon">
+                                <i class='bx bx-bar-chart-alt-2'></i>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="val-sdnn">--</div>
+                        <div class="metric-unit">Milisegundos</div>
+                        <div class="metric-subtext">Desviación estándar NN</div>
+                    </div>
+
+                    <div class="metric-card hrv" id="card-rmssd">
+                        <div class="metric-header">
+                            <div class="metric-label">RMSSD</div>
+                            <div class="metric-icon">
+                                <i class='bx bx-scatter-chart'></i>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="val-rmssd">--</div>
+                        <div class="metric-unit">Milisegundos</div>
+                        <div class="metric-subtext">Raíz cuadrada media</div>
+                    </div>
+
+                    <div class="metric-card hrv" id="card-pnn50">
+                        <div class="metric-header">
+                            <div class="metric-label">PNN50</div>
+                            <div class="metric-icon">
+                                <i class='bx bx-pie-chart-alt-2'></i>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="val-pnn50">--</div>
+                        <div class="metric-unit">Porcentaje (%)</div>
+                        <div class="metric-subtext">Variabilidad > 50ms</div>
+                    </div>
+                </div>
+
+                <div class="main-grid" id="mainGrid">
+                    <div class="chart-container" id="section-chart">
+                        <div class="chart-title-row">
+                            <div class="chart-title">ECG filtrado en tiempo real</div>
+                            <div class="chart-legend-mini">
+                                <span class="chart-legend-dot"></span>
+                                <span>ECG filtrado</span>
+                            </div>
+                        </div>
+                        <canvas id="sensorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="patientsSection" class="patients-section" style="display:none;">
+                <div class="patients-card">
+                    <div class="patients-header">
+                        <div>
+                            <div class="patients-title">Historial de pacientes</div>
+                            <div class="patients-subtitle">Pacientes que han ingresado sus datos</div>
+                        </div>
+                        <button class="btn-session start" id="btnNuevoPaciente">
+                            Nuevo paciente
+                        </button>
+                    </div>
+
+                    <div class="patients-table-wrapper">
+                        <table class="patients-table">
+                            <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Edad</th>
+                                <th>Cuenta</th>
+                                <th>Teléfono</th>
+                                <th>Correo</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="patientsTableBody">
+                            </tbody>
+                        </table>
+                        <div class="patients-empty" id="patientsEmpty">
+                            No hay pacientes registrados todavía.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportsSection" class="patients-section" style="display:none;">
+                <div class="patients-card">
+                    <div class="patients-header">
+                        <div>
+                            <div class="patients-title">Reportes de pacientes (PDF)</div>
+                            <div class="patients-subtitle">Selecciona una ficha para imprimir o guardar como PDF</div>
+                        </div>
+                    </div>
+
+                    <div class="patients-table-wrapper">
+                        <table class="patients-table">
+                            <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Cuenta</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reportsTableBody">
+                            </tbody>
+                        </table>
+                        <div class="patients-empty" id="reportsEmpty">
+                            No hay pacientes registrados todavía para generar reportes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        const socket = io();
+<div class="modal-overlay" id="patientModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">Datos del paciente</div>
+            <button class="modal-close" id="modalCloseBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteNombre">Nombre completo</label>
+                <input class="modal-input" id="pacienteNombre" type="text" placeholder="Ej. Juan Pérez">
+            </div>
 
-        // Elementos del DOM
-        const statusEl = document.getElementById('status');
-        const decisionEl = document.getElementById('decision');
-        const detailsEl = document.getElementById('details');
-        const bodyEl = document.body;
-        const bpmDisplayEl = document.getElementById('bpm-display');
-        const temp1DisplayEl = document.getElementById('temp1-display');
-        const temp2DisplayEl = document.getElementById('temp2-display');
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteEdad">Edad</label>
+                <input class="modal-input" id="pacienteEdad" type="number" min="0" max="120" placeholder="Ej. 29">
+            </div>
 
-        // Variables para la gráfica de ECG
-        let ecgChart;
-        let ecgData = []; // Almacena los puntos para la gráfica
-        const MAX_DATA_POINTS = 500; // Máximo de puntos a mostrar en la gráfica
-        let xLabels = []; // Etiquetas X para la gráfica
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteCuenta">Número de cuenta</label>
+                <input class="modal-input" id="pacienteCuenta" type="text" placeholder="Ej. 2023123456">
+            </div>
 
-        // Inicializar la gráfica al cargar la página
-        window.onload = function() {
-            const ctx = document.getElementById('ecgChart').getContext('2d');
-            ecgChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: xLabels, 
-                    datasets: [{
-                        label: 'Señal ECG',
-                        data: ecgData,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1,
-                        fill: false,
-                        pointRadius: 0
-                    }]
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteTelefono">Teléfono</label>
+                <input class="modal-input" id="pacienteTelefono" type="tel" placeholder="Ej. 55 1234 5678">
+            </div>
+
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteCorreo">Correo electrónico</label>
+                <input class="modal-input" id="pacienteCorreo" type="email" placeholder="Ej. nombre@correo.com">
+            </div>
+
+            <div class="modal-field">
+                <label class="modal-label" for="pacienteNotas">Notas</label>
+                <textarea class="modal-textarea" id="pacienteNotas" placeholder="Observaciones generales..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-save-btn" id="modalSaveBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+
+    // Toggle sidebar
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-collapsed');
+        });
+    }
+
+    // ----- GRÁFICA: ECG FILTRADO ROJO CEREZA ----- //
+    const ctx = document.getElementById('sensorChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 300);
+    gradient.addColorStop(0, 'rgba(248, 113, 113, 0.7)'); // rojo cereza arriba
+    gradient.addColorStop(1, 'rgba(248, 113, 113, 0)');   // se desvanece abajo
+
+    const chartData = {
+        labels: [],
+        datasets: [
+            {
+                label: 'ECG filtrado',
+                data: [],
+                borderColor: '#fb7185',        // línea rojo cereza
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 0,
+                pointHitRadius: 4
+            }
+        ]
+    };
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: { color: '#6b7280', padding: 8 },
+                    grid: {
+                        color: 'rgba(55, 65, 81, 0.7)',
+                        drawBorder: false
+                    },
+                    // Ajusta estos valores según la amplitud de tu señal ECG
+                    suggestedMin: -2,
+                    suggestedMax: 2
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 0 // Desactivar animación para mejor rendimiento en tiempo real
-                    },
-                    scales: {
-                        x: {
-                            display: false 
-                        },
-                        y: {
-                            beginAtZero: false,
-                            min: 0,
-                            max: 4095, // Rango ADC del ESP32
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'white'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                color: 'white'
-                            }
-                        }
+                x: {
+                    ticks: { color: '#6b7280', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+                    grid: {
+                        color: 'rgba(31, 41, 55, 0.7)',
+                        drawBorder: false
                     }
                 }
-            });
-        };
-
-        socket.on('connect', () => {
-            statusEl.textContent = 'Conectado. Esperando datos del ESP32...';
-        });
-
-        socket.on('update_status', (msg) => {
-            statusEl.textContent = msg.data;
-        });
-
-        // Evento para actualizar datos durante calibración o si BPM=0
-        socket.on('sensor_data_update', (data) => {
-            // Actualizar BPM y temperaturas
-            bpmDisplayEl.textContent = data.bpm > 0 ? `${data.bpm} BPM` : '-- BPM';
-            temp1DisplayEl.textContent = data.temp1 > 0 ? `${data.temp1}°C` : '--';
-            temp2DisplayEl.textContent = data.temp2 > 0 ? `${data.temp2}°C` : '--';
-            
-            // Actualizar gráfica de ECG
-            updateEcgChart(data.ecg_data);
-        });
-
-        // Evento para actualizar datos cuando hay una decisión
-        socket.on('new_decision', (data) => {
-            decisionEl.textContent = data.decision;
-            detailsEl.innerHTML = `Ritmo Cardíaco: <b>${data.hr}bpm</b> | Temp Promedio: <b>${data.temp_avg}°C</b><br>Razones: ${data.reasons.join(', ') || 'Ninguna'}`;
-
-            // Actualizar BPM y temperaturas individuales
-            bpmDisplayEl.textContent = `${data.hr} BPM`;
-            temp1DisplayEl.textContent = `${data.temp1}°C`;
-            temp2DisplayEl.textContent = `${data.temp2}°C`;
-
-            if (data.decision === 'MINTIENDO') {
-                decisionEl.className = 'lie';
-                bodyEl.style.backgroundColor = '#e74c3c'; // Rojo
-            } else {
-                decisionEl.className = 'truth';
-                bodyEl.style.backgroundColor = '#2ecc71'; // Verde
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    displayColors: false,
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.parsed.y.toFixed ? ctx.parsed.y.toFixed(3) : ctx.parsed.y}`
+                    }
+                }
             }
+        }
+    });
+
+    // ----- FILTRO DE SENSORES (dropdown) ----- //
+    const sensorFilter = document.getElementById('sensorFilter');
+
+    const chartSection   = document.getElementById('section-chart');
+    const mainGrid       = document.getElementById('mainGrid');
+    
+    // Tarjetas originales
+    const cardBpm        = document.getElementById('card-bpm');
+    const cardTemp1      = document.getElementById('card-temp1');
+    const cardTemp2      = document.getElementById('card-temp2');
+    const cardElectrodes = document.getElementById('card-electrodes');
+    
+    // Tarjetas nuevas HRV
+    const cardSdnn       = document.getElementById('card-sdnn');
+    const cardRmssd      = document.getElementById('card-rmssd');
+    const cardPnn50      = document.getElementById('card-pnn50');
+
+    function setVisible(el, visible) {
+        if (!el) return;
+        el.style.display = visible ? '' : 'none';
+    }
+
+    function applySensorFilter(value) {
+        // Mostramos/Ocultamos tarjetas según selección
+        if (value === 'ecg') {
+            setVisible(cardBpm, true);
+            setVisible(cardElectrodes, true);
+            setVisible(cardSdnn, true);
+            setVisible(cardRmssd, true);
+            setVisible(cardPnn50, true);
             
-            // Actualizar gráfica de ECG
-            updateEcgChart(data.ecg_data);
+            setVisible(cardTemp1, false);
+            setVisible(cardTemp2, false);
+
+            setVisible(mainGrid, true);
+            setVisible(chartSection, true);
+        } else if (value === 'temp') {
+            setVisible(cardBpm, false);
+            setVisible(cardElectrodes, false);
+            setVisible(cardSdnn, false);
+            setVisible(cardRmssd, false);
+            setVisible(cardPnn50, false);
+            
+            setVisible(cardTemp1, true);
+            setVisible(cardTemp2, true);
+
+            setVisible(mainGrid, false); // ocultamos gráfica
+        } else {
+            // value === 'all'
+            setVisible(cardBpm, true);
+            setVisible(cardElectrodes, true);
+            setVisible(cardSdnn, true);
+            setVisible(cardRmssd, true);
+            setVisible(cardPnn50, true);
+            
+            setVisible(cardTemp1, true);
+            setVisible(cardTemp2, true);
+
+            setVisible(mainGrid, true);
+            setVisible(chartSection, true);
+        }
+    }
+
+    if (sensorFilter) {
+        sensorFilter.addEventListener('change', (e) => {
+            applySensorFilter(e.target.value);
         });
+        applySensorFilter(sensorFilter.value);
+    }
 
-        // Función para actualizar la gráfica de ECG (Gráfica "rodante")
-        function updateEcgChart(newEcgPoints) {
-            ecgData.push(...newEcgPoints);
-            
-            let newLabels = [];
-            for(let i = 0; i < newEcgPoints.length; i++) {
-                newLabels.push(xLabels.length + i);
-            }
-            xLabels.push(...newLabels);
+    // ----- GAUGES ------------------------------------------------------ //
+    const bpmGaugeEl   = document.getElementById('bpmGauge');
+    const temp1GaugeEl = document.getElementById('temp1Gauge');
+    const temp2GaugeEl = document.getElementById('temp2Gauge');
 
+    function setGauge(el, val, min, max) {
+        if (!el) return;
+        const v = parseFloat(val);
+        if (isNaN(v)) return;
+        const ratio = Math.max(0, Math.min(1, (v - min) / (max - min)));
+        const deg = ratio * 360;
+        el.style.setProperty('--gauge-value', deg + 'deg');
+    }
 
-            // Mantener solo los últimos MAX_DATA_POINTS
-            if (ecgData.length > MAX_DATA_POINTS) {
-                const diff = ecgData.length - MAX_DATA_POINTS;
-                ecgData.splice(0, diff); // Borrar los puntos viejos del inicio
-                xLabels.splice(0, diff); // Borrar las etiquetas viejas
-            }
-            
-            ecgChart.data.labels = xLabels;
-            ecgChart.data.datasets[0].data = ecgData;
-            ecgChart.update('none'); // Redibujar la gráfica sin animación
+    // ----- SOCKET EVENTS ---------------------------------------------- //
+    socket.on('connect', function() {
+        const statusBox = document.getElementById('status');
+        statusBox.textContent = 'Conectado al servidor';
+        statusBox.style.borderColor = '#4ade80';
+
+        const cs = document.getElementById('connection-status');
+        cs.textContent = 'Conectado';
+        cs.style.background = 'linear-gradient(135deg, #4ade80 0%, #22d3ee 100%)';
+        cs.style.webkitBackgroundClip = 'text';
+        cs.style.webkitTextFillColor = 'transparent';
+        cs.style.backgroundClip = 'text';
+    });
+
+    socket.on('disconnect', function() {
+        const statusBox = document.getElementById('status');
+        statusBox.textContent = 'Desconectado del servidor';
+        statusBox.style.borderColor = '#f97373';
+
+        const cs = document.getElementById('connection-status');
+        cs.textContent = 'Desconectado';
+        cs.style.background = 'linear-gradient(135deg, #f97373 0%, #fb7185 100%)';
+        cs.style.webkitBackgroundClip = 'text';
+        cs.style.webkitTextFillColor = 'transparent';
+        cs.style.backgroundClip = 'text';
+    });
+
+    socket.on('update_status', function(msg) {
+        const statusBox = document.getElementById('status');
+        if(statusBox) statusBox.textContent = msg.data;
+    });
+
+    // Recibir métricas (bpm, temp, sdnn, rmssd, pnn50, status)
+    // Coincide con tu Python: latest_metrics
+    socket.on('new_decision', function(data) {
+        console.log('new_decision:', data);
+
+        // Extracción de datos con fallback
+        const rawBpm   = data.bpm;
+        const rawSdnn  = data.sdnn;
+        const rawRmssd = data.rmssd;
+        const rawPnn50 = data.pnn50;
+        
+        const rawT1    = data.temp_1;
+        const rawT2    = data.temp_2;
+        const status   = data.status;
+
+        // Formateo para display
+        const bpmValue   = (rawBpm != null && !isNaN(parseFloat(rawBpm))) ? Math.round(parseFloat(rawBpm)) : '--';
+        const temp1Value = (rawT1  != null && !isNaN(parseFloat(rawT1)))  ? parseFloat(rawT1).toFixed(1) : '--';
+        const temp2Value = (rawT2  != null && !isNaN(parseFloat(rawT2)))  ? parseFloat(rawT2).toFixed(1) : '--';
+        
+        const sdnnValue  = (rawSdnn  != null) ? rawSdnn : '--';
+        const rmssdValue = (rawRmssd != null) ? rawRmssd : '--';
+        const pnn50Value = (rawPnn50 != null) ? rawPnn50 : '--';
+
+        // Actualizar DOM
+        document.getElementById('bpm').textContent   = bpmValue;
+        document.getElementById('temp1').textContent = temp1Value;
+        document.getElementById('temp2').textContent = temp2Value;
+
+        // Nuevas métricas HRV
+        document.getElementById('val-sdnn').textContent  = sdnnValue;
+        document.getElementById('val-rmssd').textContent = rmssdValue;
+        document.getElementById('val-pnn50').textContent = pnn50Value;
+
+        // Actualizar Gauges visuales
+        if (!isNaN(parseFloat(rawBpm))) setGauge(bpmGaugeEl,   rawBpm, 40, 160);
+        if (!isNaN(parseFloat(rawT1)))  setGauge(temp1GaugeEl, rawT1,  20, 45);
+        if (!isNaN(parseFloat(rawT2)))  setGauge(temp2GaugeEl, rawT2,  20, 45);
+
+        // Status general
+        if (status) {
+            document.getElementById('status').textContent = status;
+        }
+    });
+
+    // Gráfica en tiempo real
+    socket.on('update_chart', function(data) {
+        // Tu Python probablemente envíe un objeto como { "value": 0.123 } o { "clean_samples": [..] }
+        // Aquí intentamos leer varios formatos posibles
+        let sample = data.filter_ecg ?? data.value ?? data.ecg ?? data.bpm; 
+        
+        // Si recibes un array, tomamos el último valor
+        if (Array.isArray(data.ecg_filtered) && data.ecg_filtered.length > 0) {
+            sample = data.ecg_filtered[data.ecg_filtered.length - 1];
+        } else if (Array.isArray(data) && data.length > 0) {
+             sample = data[data.length - 1];
         }
 
-    </script>
+        sample = parseFloat(sample);
+        if (isNaN(sample)) return;
+
+        const now = new Date().toLocaleTimeString();
+        chartData.labels.push(now);
+        chartData.datasets[0].data.push(sample);
+
+        // Mantener ventana deslizante de 400 muestras (ajustar según FS y suavidad deseada)
+        if (chartData.labels.length > 400) {
+            chartData.labels.shift();
+            chartData.datasets[0].data.shift();
+        }
+
+        chart.update();
+    });
+
+    // ----- SECCIONES: DASHBOARD / PACIENTES / REPORTES ---------------- //
+    const dashboardSection = document.getElementById('dashboardSection');
+    const patientsSection  = document.getElementById('patientsSection');
+    const reportsSection   = document.getElementById('reportsSection');
+
+    const navDashboard = document.getElementById('navDashboard');
+    const navPacientes = document.getElementById('navPacientes');
+    const navReportes  = document.getElementById('navReportes');
+
+    const breadcrumbTitle = document.querySelector('.breadcrumb-title');
+    const breadcrumbSub   = document.querySelector('.breadcrumb-sub');
+
+    function setActiveMenu(target) {
+        [navDashboard, navPacientes, navReportes].forEach(item => {
+            if (!item) return;
+            item.classList.remove('active');
+        });
+        if (target) target.classList.add('active');
+    }
+
+    function showDashboard() {
+        if (dashboardSection) dashboardSection.style.display = '';
+        if (patientsSection)  patientsSection.style.display  = 'none';
+        if (reportsSection)   reportsSection.style.display   = 'none';
+        setActiveMenu(navDashboard);
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Dashboard';
+        if (breadcrumbSub)   breadcrumbSub.textContent   = 'Signos vitales / Home';
+    }
+
+    function showPacientes() {
+        if (dashboardSection) dashboardSection.style.display = 'none';
+        if (patientsSection)  patientsSection.style.display  = '';
+        if (reportsSection)   reportsSection.style.display   = 'none';
+        setActiveMenu(navPacientes);
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Pacientes';
+        if (breadcrumbSub)   breadcrumbSub.textContent   = 'Gestión / Historial';
+    }
+
+    function showReportes() {
+        if (dashboardSection) dashboardSection.style.display = 'none';
+        if (patientsSection)  patientsSection.style.display  = 'none';
+        if (reportsSection)   reportsSection.style.display   = '';
+        setActiveMenu(navReportes);
+        if (breadcrumbTitle) breadcrumbTitle.textContent = 'Reportes';
+        if (breadcrumbSub)   breadcrumbSub.textContent   = 'Pacientes / Fichas PDF';
+    }
+
+    if (navDashboard) navDashboard.addEventListener('click', showDashboard);
+    if (navPacientes) navPacientes.addEventListener('click', showPacientes);
+    if (navReportes)  navReportes.addEventListener('click', showReportes);
+
+    // ----- MODAL DATOS PACIENTE --------------------------------------- //
+    const patientModal     = document.getElementById('patientModal');
+    const btnStart         = document.getElementById('btnStart');
+    const modalClose       = document.getElementById('modalCloseBtn');
+    const modalSave        = document.getElementById('modalSaveBtn');
+    const btnNuevoPaciente = document.getElementById('btnNuevoPaciente');
+
+    if (btnStart) {
+        btnStart.addEventListener('click', () => {
+            patientModal.classList.add('show');
+        });
+    }
+    if (btnNuevoPaciente) {
+        btnNuevoPaciente.addEventListener('click', () => {
+            patientModal.classList.add('show');
+        });
+    }
+
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            patientModal.classList.remove('show');
+        });
+    }
+
+    // ----- HISTORIAL DE PACIENTES (localStorage) ---------------------- //
+    let patientsHistory = [];
+
+    const patientsTableBody = document.getElementById('patientsTableBody');
+    const patientsEmpty     = document.getElementById('patientsEmpty');
+    const reportsTableBody  = document.getElementById('reportsTableBody');
+    const reportsEmpty      = document.getElementById('reportsEmpty');
+
+    function loadPatientsFromStorage() {
+        try {
+            const saved = localStorage.getItem('patientsHistory');
+            if (saved) {
+                patientsHistory = JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error('Error leyendo pacientes de localStorage', e);
+        }
+        renderPatientsHistory();
+        renderReportsHistory();
+    }
+
+    function savePatientsToStorage() {
+        try {
+            localStorage.setItem('patientsHistory', JSON.stringify(patientsHistory));
+        } catch (e) {
+            console.error('Error guardando pacientes en localStorage', e);
+        }
+    }
+
+    // Imprimir ficha de paciente (usado en Reportes)
+    function handlePrintPatient(index) {
+        const p = patientsHistory[index];
+        if (!p) return;
+
+        const win = window.open('', '_blank');
+        if (!win) {
+            alert('No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.');
+            return;
+        }
+
+        win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficha de paciente</title>
+<style>
+    body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #020617;
+        color: #e5e7eb;
+        padding: 24px;
+    }
+    h1 {
+        font-size: 1.3rem;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 520px;
+        font-size: 0.9rem;
+    }
+    td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #334155;
+    }
+    td.label {
+        width: 140px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.78rem;
+    }
+</style>
+</head>
+<body>
+    <h1>Ficha de paciente</h1>
+    <table>
+        <tr><td class="label">Nombre</td><td>${p.nombre || '-'}</td></tr>
+        <tr><td class="label">Edad</td><td>${p.edad || '-'}</td></tr>
+        <tr><td class="label">Cuenta</td><td>${p.cuenta || '-'}</td></tr>
+        <tr><td class="label">Teléfono</td><td>${p.telefono || '-'}</td></tr>
+        <tr><td class="label">Correo</td><td>${p.correo || '-'}</td></tr>
+        <tr><td class="label">Fecha registro</td><td>${p.fecha || '-'}</td></tr>
+        <tr><td class="label">Notas</td><td>${p.notas || '-'}</td></tr>
+    </table>
+</body>
+</html>`);
+        win.document.close();
+        win.focus();
+        win.print();
+    }
+
+    // Eliminar paciente del historial
+    function handleDeletePatient(index) {
+        const p = patientsHistory[index];
+        if (!p) return;
+
+        const ok = confirm(`¿Deseas eliminar a "${p.nombre || 'este paciente'}" del historial?`);
+        if (!ok) return;
+
+        patientsHistory.splice(index, 1);
+        savePatientsToStorage();
+        renderPatientsHistory();
+        renderReportsHistory();
+    }
+
+    function renderPatientsHistory() {
+        if (!patientsTableBody) return;
+
+        patientsTableBody.innerHTML = '';
+        if (!patientsHistory.length) {
+            if (patientsEmpty) patientsEmpty.style.display = '';
+            return;
+        }
+        if (patientsEmpty) patientsEmpty.style.display = 'none';
+
+        patientsHistory.forEach((p, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.nombre   || '-'}</td>
+                <td>${p.edad     || '-'}</td>
+                <td>${p.cuenta   || '-'}</td>
+                <td>${p.telefono || '-'}</td>
+                <td>${p.correo   || '-'}</td>
+                <td>${p.fecha    || '-'}</td>
+                <td><button class="btn-delete" data-index="${index}">Eliminar</button></td>
+            `;
+            patientsTableBody.appendChild(tr);
+
+            const btn = tr.querySelector('.btn-delete');
+            if (btn) {
+                btn.addEventListener('click', () => handleDeletePatient(index));
+            }
+        });
+    }
+
+    function renderReportsHistory() {
+        if (!reportsTableBody) return;
+
+        reportsTableBody.innerHTML = '';
+        if (!patientsHistory.length) {
+            if (reportsEmpty) reportsEmpty.style.display = '';
+            return;
+        }
+        if (reportsEmpty) reportsEmpty.style.display = 'none';
+
+        patientsHistory.forEach((p, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.nombre || '-'}</td>
+                <td>${p.cuenta || '-'}</td>
+                <td>${p.fecha  || '-'}</td>
+                <td><button class="btn-print" data-index="${index}">Imprimir</button></td>
+            `;
+            reportsTableBody.appendChild(tr);
+
+            const btn = tr.querySelector('.btn-print');
+            if (btn) {
+                btn.addEventListener('click', () => handlePrintPatient(index));
+            }
+        });
+    }
+
+    // Guardar paciente al hacer clic en "Guardar"
+    if (modalSave) {
+        modalSave.addEventListener('click', () => {
+            const nombre   = document.getElementById('pacienteNombre').value.trim();
+            const edad     = document.getElementById('pacienteEdad').value.trim();
+            const cuenta   = document.getElementById('pacienteCuenta').value.trim();
+            const telefono = document.getElementById('pacienteTelefono').value.trim();
+            const correo   = document.getElementById('pacienteCorreo').value.trim();
+            const notas    = document.getElementById('pacienteNotas').value.trim();
+
+            if (!nombre) {
+                alert('Por favor ingresa el nombre del paciente.');
+                return;
+            }
+
+            const nuevoPaciente = {
+                nombre,
+                edad: edad || null,
+                cuenta: cuenta || null,
+                telefono: telefono || null,
+                correo: correo || null,
+                notas: notas || null,
+                fecha: new Date().toLocaleString()
+            };
+
+            patientsHistory.push(nuevoPaciente);
+            savePatientsToStorage();
+            renderPatientsHistory();
+            renderReportsHistory();
+
+            alert('Datos del paciente guardados en el historial.');
+            patientModal.classList.remove('show');
+
+            // Resetear campos
+            document.getElementById('pacienteNombre').value   = '';
+            document.getElementById('pacienteEdad').value     = '';
+            document.getElementById('pacienteCuenta').value   = '';
+            document.getElementById('pacienteTelefono').value = '';
+            document.getElementById('pacienteCorreo').value   = '';
+            document.getElementById('pacienteNotas').value    = '';
+        });
+    }
+
+    // Cargar historial al inicio
+    loadPatientsFromStorage();
+</script>
 </body>
 </html>
