@@ -1455,11 +1455,9 @@
     });
 
     // Recibir métricas (bpm, temp, sdnn, rmssd, pnn50, status)
-    // Coincide con tu Python: latest_metrics
     socket.on('new_decision', function(data) {
         console.log('new_decision:', data);
 
-        // Extracción de datos con fallback
         const rawBpm   = data.bpm;
         const rawSdnn  = data.sdnn;
         const rawRmssd = data.rmssd;
@@ -1469,8 +1467,9 @@
         const rawT2    = data.temp_2;
         const status   = data.status;
 
-        // Formateo para display
-        const bpmValue   = (rawBpm != null && !isNaN(parseFloat(rawBpm))) ? Math.round(parseFloat(rawBpm)) : '--';
+        const bpmValue   = (rawBpm != null && !isNaN(parseFloat(rawBpm)) && parseFloat(rawBpm) > 0)
+                           ? Math.round(parseFloat(rawBpm))
+                           : '--';
         const temp1Value = (rawT1  != null && !isNaN(parseFloat(rawT1)))  ? parseFloat(rawT1).toFixed(1) : '--';
         const temp2Value = (rawT2  != null && !isNaN(parseFloat(rawT2)))  ? parseFloat(rawT2).toFixed(1) : '--';
         
@@ -1478,22 +1477,18 @@
         const rmssdValue = (rawRmssd != null) ? rawRmssd : '--';
         const pnn50Value = (rawPnn50 != null) ? rawPnn50 : '--';
 
-        // Actualizar DOM
         document.getElementById('bpm').textContent   = bpmValue;
         document.getElementById('temp1').textContent = temp1Value;
         document.getElementById('temp2').textContent = temp2Value;
 
-        // Nuevas métricas HRV
         document.getElementById('val-sdnn').textContent  = sdnnValue;
         document.getElementById('val-rmssd').textContent = rmssdValue;
         document.getElementById('val-pnn50').textContent = pnn50Value;
 
-        // Actualizar Gauges visuales
-        if (!isNaN(parseFloat(rawBpm))) setGauge(bpmGaugeEl,   rawBpm, 40, 160);
+        if (!isNaN(parseFloat(rawBpm)) && parseFloat(rawBpm) > 0) setGauge(bpmGaugeEl,   rawBpm, 40, 160);
         if (!isNaN(parseFloat(rawT1)))  setGauge(temp1GaugeEl, rawT1,  20, 45);
         if (!isNaN(parseFloat(rawT2)))  setGauge(temp2GaugeEl, rawT2,  20, 45);
 
-        // Status general
         if (status) {
             document.getElementById('status').textContent = status;
         }
@@ -1501,15 +1496,12 @@
 
     // Gráfica en tiempo real
     socket.on('update_chart', function(data) {
-        // Tu Python probablemente envíe un objeto como { "value": 0.123 } o { "clean_samples": [..] }
-        // Aquí intentamos leer varios formatos posibles
         let sample = data.filter_ecg ?? data.value ?? data.ecg ?? data.bpm; 
         
-        // Si recibes un array, tomamos el último valor
         if (Array.isArray(data.ecg_filtered) && data.ecg_filtered.length > 0) {
             sample = data.ecg_filtered[data.ecg_filtered.length - 1];
         } else if (Array.isArray(data) && data.length > 0) {
-             sample = data[data.length - 1];
+            sample = data[data.length - 1];
         }
 
         sample = parseFloat(sample);
@@ -1519,7 +1511,6 @@
         chartData.labels.push(now);
         chartData.datasets[0].data.push(sample);
 
-        // Mantener ventana deslizante de 400 muestras (ajustar según FS y suavidad deseada)
         if (chartData.labels.length > 400) {
             chartData.labels.shift();
             chartData.datasets[0].data.shift();
