@@ -9,8 +9,7 @@ web/__pycache__/
 
 # --- ARCHIVOS PRIVADOS QUE NO SE DEBEN SUBIR ---
 
-# 1. Archivo de claves privadas del firmware
-DetectorDeMentiras/include/clavesConfig.h
+
 
 # 2. Archivo de claves privadas de la web app
 web/config.py
