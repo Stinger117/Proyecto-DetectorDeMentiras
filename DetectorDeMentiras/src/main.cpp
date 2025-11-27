@@ -130,7 +130,7 @@ void loop() {
         // Usamos las *últimas* temperaturas guardadas para construir el JSON
         String lote = sensor.getDataBatchJSON(lastTemp1, lastTemp2); 
         
-        comm.publish(MQTT_TOPIC, lote.c_str());
+        comm.publish("senores/poligrafo", lote.c_str());
         Serial.println("Lote de ECG+Temp enviado al MQTT.");
     }
 }

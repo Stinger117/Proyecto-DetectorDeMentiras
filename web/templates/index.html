@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ICO-IOT - Signos Vitales</title>
 
+    <!-- Socket.IO & Chart.js -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Iconos minimalistas -->
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
     <style>
@@ -381,12 +383,6 @@
             border-top: 3px solid #6366f1;
         }
 
-        /* Nueva clase para las tarjetas HRV (SDNN, RMSSD, PNN50) */
-        .metric-card.hrv {
-            border-top: 3px solid var(--accent-3);
-            background: radial-gradient(circle at top left, rgba(74, 222, 128, 0.18), rgba(15, 23, 42, 0.96));
-        }
-
         .metric-header {
             display: flex;
             justify-content: space-between;
@@ -441,10 +437,6 @@
 
         .metric-card.temp .metric-value {
             color: var(--accent-2);
-        }
-        
-        .metric-card.hrv .metric-value {
-            color: var(--accent-3);
         }
 
         .metric-unit {
@@ -915,6 +907,7 @@
 </head>
 <body>
 <div class="layout">
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo-dot"></div>
@@ -965,7 +958,9 @@
         </div>
     </aside>
 
+    <!-- MAIN -->
     <div class="main">
+        <!-- TOPBAR -->
         <header class="topbar">
             <div class="topbar-left">
                 <button class="sidebar-toggle" id="sidebarToggle">
@@ -978,6 +973,7 @@
                 </div>
             </div>
 
+            <!-- ACTIVIDADES EN HEADER: dos tarjetas -->
             <div class="topbar-right">
                 <div class="topbar-activities-grid">
                     <div class="topbar-activity-card">
@@ -1011,8 +1007,11 @@
             </div>
         </header>
 
+        <!-- CONTENIDO PRINCIPAL -->
         <div class="main-content">
+            <!-- SECCIÓN DASHBOARD -->
             <div id="dashboardSection">
+                <!-- ESTADO + SELECTOR SENSORES -->
                 <div class="status-row">
                     <div class="status-box" id="status">Esperando conexión...</div>
                     <div class="header-controls">
@@ -1024,7 +1023,9 @@
                     </div>
                 </div>
 
+                <!-- TARJETAS MÉTRICAS -->
                 <div class="metrics-grid">
+                    <!-- BPM -->
                     <div class="metric-card heart" id="card-bpm">
                         <div class="metric-header">
                             <div class="metric-label">BPM</div>
@@ -1042,6 +1043,7 @@
                         <div class="metric-subtext">Latidos por minuto</div>
                     </div>
 
+                    <!-- Temperatura 1 -->
                     <div class="metric-card temp" id="card-temp1">
                         <div class="metric-header">
                             <div class="metric-label metric-label-with-icon">
@@ -1064,6 +1066,7 @@
                         <div class="metric-subtext">Temperatura periférica</div>
                     </div>
 
+                    <!-- Temperatura 2 -->
                     <div class="metric-card temp" id="card-temp2">
                         <div class="metric-header">
                             <div class="metric-label metric-label-with-icon">
@@ -1086,6 +1089,7 @@
                         <div class="metric-subtext">Temperatura periférica</div>
                     </div>
 
+                    <!-- Estado electrodos -->
                     <div class="metric-card status" id="card-electrodes">
                         <div class="metric-header">
                             <div class="metric-label">Estado</div>
@@ -1093,50 +1097,15 @@
                                 <i class='bx bx-wifi'></i>
                             </div>
                         </div>
-                        <div class="metric-value" id="connection-status" style="color: var(--accent); font-size:1.1rem; margin-top:10px;">
+                        <div class="metric-value" id="connection-status" style="color: var(--accent);">
                             Desconectado
                         </div>
                         <div class="metric-unit">Electrodos</div>
-                        <div class="metric-subtext">Estado de conexión</div>
-                    </div>
-
-                    <div class="metric-card hrv" id="card-sdnn">
-                        <div class="metric-header">
-                            <div class="metric-label">SDNN</div>
-                            <div class="metric-icon">
-                                <i class='bx bx-bar-chart-alt-2'></i>
-                            </div>
-                        </div>
-                        <div class="metric-value" id="val-sdnn">--</div>
-                        <div class="metric-unit">Milisegundos</div>
-                        <div class="metric-subtext">Desviación estándar NN</div>
-                    </div>
-
-                    <div class="metric-card hrv" id="card-rmssd">
-                        <div class="metric-header">
-                            <div class="metric-label">RMSSD</div>
-                            <div class="metric-icon">
-                                <i class='bx bx-scatter-chart'></i>
-                            </div>
-                        </div>
-                        <div class="metric-value" id="val-rmssd">--</div>
-                        <div class="metric-unit">Milisegundos</div>
-                        <div class="metric-subtext">Raíz cuadrada media</div>
-                    </div>
-
-                    <div class="metric-card hrv" id="card-pnn50">
-                        <div class="metric-header">
-                            <div class="metric-label">PNN50</div>
-                            <div class="metric-icon">
-                                <i class='bx bx-pie-chart-alt-2'></i>
-                            </div>
-                        </div>
-                        <div class="metric-value" id="val-pnn50">--</div>
-                        <div class="metric-unit">Porcentaje (%)</div>
-                        <div class="metric-subtext">Variabilidad > 50ms</div>
+                        <div class="metric-subtext">Estado de conexión de los electrodos</div>
                     </div>
                 </div>
 
+                <!-- GRÁFICA -->
                 <div class="main-grid" id="mainGrid">
                     <div class="chart-container" id="section-chart">
                         <div class="chart-title-row">
@@ -1151,6 +1120,7 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN PACIENTES (HISTORIAL) -->
             <div id="patientsSection" class="patients-section" style="display:none;">
                 <div class="patients-card">
                     <div class="patients-header">
@@ -1177,6 +1147,7 @@
                             </tr>
                             </thead>
                             <tbody id="patientsTableBody">
+                            <!-- Filas generadas por JS -->
                             </tbody>
                         </table>
                         <div class="patients-empty" id="patientsEmpty">
@@ -1186,6 +1157,7 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN REPORTES (PDF) -->
             <div id="reportsSection" class="patients-section" style="display:none;">
                 <div class="patients-card">
                     <div class="patients-header">
@@ -1206,6 +1178,7 @@
                             </tr>
                             </thead>
                             <tbody id="reportsTableBody">
+                            <!-- Filas generadas por JS -->
                             </tbody>
                         </table>
                         <div class="patients-empty" id="reportsEmpty">
@@ -1219,6 +1192,7 @@
     </div>
 </div>
 
+<!-- MODAL DATOS DEL PACIENTE -->
 <div class="modal-overlay" id="patientModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -1313,7 +1287,7 @@
                         color: 'rgba(55, 65, 81, 0.7)',
                         drawBorder: false
                     },
-                    // Ajusta estos valores según la amplitud de tu señal ECG
+                    beginAtZero: false,
                     suggestedMin: -2,
                     suggestedMax: 2
                 },
@@ -1343,17 +1317,10 @@
 
     const chartSection   = document.getElementById('section-chart');
     const mainGrid       = document.getElementById('mainGrid');
-    
-    // Tarjetas originales
     const cardBpm        = document.getElementById('card-bpm');
     const cardTemp1      = document.getElementById('card-temp1');
     const cardTemp2      = document.getElementById('card-temp2');
     const cardElectrodes = document.getElementById('card-electrodes');
-    
-    // Tarjetas nuevas HRV
-    const cardSdnn       = document.getElementById('card-sdnn');
-    const cardRmssd      = document.getElementById('card-rmssd');
-    const cardPnn50      = document.getElementById('card-pnn50');
 
     function setVisible(el, visible) {
         if (!el) return;
@@ -1361,14 +1328,9 @@
     }
 
     function applySensorFilter(value) {
-        // Mostramos/Ocultamos tarjetas según selección
         if (value === 'ecg') {
             setVisible(cardBpm, true);
             setVisible(cardElectrodes, true);
-            setVisible(cardSdnn, true);
-            setVisible(cardRmssd, true);
-            setVisible(cardPnn50, true);
-            
             setVisible(cardTemp1, false);
             setVisible(cardTemp2, false);
 
@@ -1377,22 +1339,13 @@
         } else if (value === 'temp') {
             setVisible(cardBpm, false);
             setVisible(cardElectrodes, false);
-            setVisible(cardSdnn, false);
-            setVisible(cardRmssd, false);
-            setVisible(cardPnn50, false);
-            
             setVisible(cardTemp1, true);
             setVisible(cardTemp2, true);
 
             setVisible(mainGrid, false); // ocultamos gráfica
         } else {
-            // value === 'all'
             setVisible(cardBpm, true);
             setVisible(cardElectrodes, true);
-            setVisible(cardSdnn, true);
-            setVisible(cardRmssd, true);
-            setVisible(cardPnn50, true);
-            
             setVisible(cardTemp1, true);
             setVisible(cardTemp2, true);
 
@@ -1451,57 +1404,48 @@
 
     socket.on('update_status', function(msg) {
         const statusBox = document.getElementById('status');
-        if(statusBox) statusBox.textContent = msg.data;
+        statusBox.textContent = msg.data;
     });
 
-    // Recibir métricas (bpm, temp, sdnn, rmssd, pnn50, status)
+    // Recibir métricas (bpm / hr, temp_1 / temp1, temp_2 / temp2, status, etc.)
     socket.on('new_decision', function(data) {
         console.log('new_decision:', data);
 
-        const rawBpm   = data.bpm;
-        const rawSdnn  = data.sdnn;
-        const rawRmssd = data.rmssd;
-        const rawPnn50 = data.pnn50;
-        
-        const rawT1    = data.temp_1;
-        const rawT2    = data.temp_2;
-        const status   = data.status;
+        const rawBpm = data.bpm ?? data.hr ?? data.heartRate;
+        const rawT1  = data.temp_1 ?? data.temp1 ?? data.temperature ?? data.temperature1;
+        const rawT2  = data.temp_2 ?? data.temp2 ?? data.temperature2;
+        const status = data.status;
 
-        const bpmValue   = (rawBpm != null && !isNaN(parseFloat(rawBpm)) && parseFloat(rawBpm) > 0)
-                           ? Math.round(parseFloat(rawBpm))
-                           : '--';
-        const temp1Value = (rawT1  != null && !isNaN(parseFloat(rawT1)))  ? parseFloat(rawT1).toFixed(1) : '--';
-        const temp2Value = (rawT2  != null && !isNaN(parseFloat(rawT2)))  ? parseFloat(rawT2).toFixed(1) : '--';
-        
-        const sdnnValue  = (rawSdnn  != null) ? rawSdnn : '--';
-        const rmssdValue = (rawRmssd != null) ? rawRmssd : '--';
-        const pnn50Value = (rawPnn50 != null) ? rawPnn50 : '--';
+        const bpmValue   = rawBpm != null && !isNaN(parseFloat(rawBpm)) ? Math.round(parseFloat(rawBpm))      : '--';
+        const temp1Value = rawT1  != null && !isNaN(parseFloat(rawT1))  ? parseFloat(rawT1).toFixed(1)  : '--';
+        const temp2Value = rawT2  != null && !isNaN(parseFloat(rawT2))  ? parseFloat(rawT2).toFixed(1)  : '--';
 
         document.getElementById('bpm').textContent   = bpmValue;
         document.getElementById('temp1').textContent = temp1Value;
         document.getElementById('temp2').textContent = temp2Value;
 
-        document.getElementById('val-sdnn').textContent  = sdnnValue;
-        document.getElementById('val-rmssd').textContent = rmssdValue;
-        document.getElementById('val-pnn50').textContent = pnn50Value;
-
-        if (!isNaN(parseFloat(rawBpm)) && parseFloat(rawBpm) > 0) setGauge(bpmGaugeEl,   rawBpm, 40, 160);
+        if (!isNaN(parseFloat(rawBpm))) setGauge(bpmGaugeEl,   rawBpm, 40, 160);
         if (!isNaN(parseFloat(rawT1)))  setGauge(temp1GaugeEl, rawT1,  20, 45);
         if (!isNaN(parseFloat(rawT2)))  setGauge(temp2GaugeEl, rawT2,  20, 45);
 
-        if (status) {
+        if (typeof status === 'string') {
             document.getElementById('status').textContent = status;
         }
     });
 
-    // Gráfica en tiempo real
+    // Gráfica: usa filter_ecg / ecg_filtered / ecg (fallback a bpm/hr)
     socket.on('update_chart', function(data) {
-        let sample = data.filter_ecg ?? data.value ?? data.ecg ?? data.bpm; 
-        
-        if (Array.isArray(data.ecg_filtered) && data.ecg_filtered.length > 0) {
+        console.log('update_chart:', data);
+
+        let sample = data.filter_ecg;
+        if (sample === undefined) sample = data.value;
+        if (sample === undefined) sample = data.ecg;
+        if (sample === undefined) sample = data.bpm;
+        if (sample === undefined) sample = data.hr;
+
+        // Si viene un arreglo con muchos puntos filtrados, tomamos el último
+        if (sample === undefined && Array.isArray(data.ecg_filtered) && data.ecg_filtered.length) {
             sample = data.ecg_filtered[data.ecg_filtered.length - 1];
-        } else if (Array.isArray(data) && data.length > 0) {
-            sample = data[data.length - 1];
         }
 
         sample = parseFloat(sample);
@@ -1511,6 +1455,7 @@
         chartData.labels.push(now);
         chartData.datasets[0].data.push(sample);
 
+        // Mantener ventana deslizante de 400 muestras
         if (chartData.labels.length > 400) {
             chartData.labels.shift();
             chartData.datasets[0].data.shift();

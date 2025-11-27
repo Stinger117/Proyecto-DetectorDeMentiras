@@ -18,7 +18,7 @@
 SensorManager::SensorManager(int analogPin, int loPlusPin, int loMinusPin, int batchSize, int delayMs)
   : _analogPin(analogPin), _loPlusPin(loPlusPin), _loMinusPin(loMinusPin),
     _batchSize(batchSize), _delayMs(delayMs), _index(0) {
-      
+    //Arreglo que guarda las muestras de los pulsos ECG
     _samples = new float[_batchSize];
     
     // Configurar los modos de los pines
@@ -54,7 +54,7 @@ bool SensorManager::available() {
     return false;
 }
 
-// DEVUELVE EL LOTE EN FORMATO JSON CON TEMPERATURAS
+// DEVUELVE EL LOTE EN FORMATO JSON CON TEMPERATURAS Y EL ECG 
 String SensorManager::getDataBatchJSON(float temp1, float temp2) {
     // Inicia el JSON y el array de ECG
     String json = "{\"DatosECG\":[";  
